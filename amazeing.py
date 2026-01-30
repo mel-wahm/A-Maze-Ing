@@ -10,7 +10,7 @@ try:
         print("The given numbers are to small to be able to print 42")
         exit()
     if width > 35 or height > 35:
-        print("Numbers are to high, please choose lower values")
+        print("Numbers are too high, please choose lower values")
         exit()
 except Exception:
     print("Only numbers are allowed.")
@@ -58,8 +58,8 @@ def get_forty_two_coords(width, height):
 
 
 _42cords = get_forty_two_coords(width, height)
-for cord in _42cords:
-    cord.is_visited = True
+for cell in _42cords:
+    cell.is_visited = True
 
 
 def print_maze(maze):
@@ -96,7 +96,7 @@ def print_maze(maze):
             elif r == height - 1 and c == width - 1:
                 cell_line += "\033[31m██\033[0m"
             elif maze[r][c] in _42cords:
-                cell_line += wall
+                cell_line += "\033[90m██\033[0m"
             else:
                 cell_line += space
 
@@ -152,7 +152,6 @@ def break_wall(x, y, nx, ny):
         maze[y][x].walls -= 8
         maze[ny][nx].walls -= 2
 
-
 def dfs(x, y):
     neighbors = get_neighbors(x, y)
     random.shuffle(neighbors)
@@ -161,9 +160,47 @@ def dfs(x, y):
         nx, ny = neighbor
         if not maze[ny][nx].is_visited:
             break_wall(x, y, nx, ny)
-            time.sleep(0.0001)
+            time.sleep(0.01)
             print_maze(maze)
             dfs(nx, ny)
+
+
+def prims(start_x, start_y):
+    _42_cells = get_forty_two_coords(width, height)
+    for cell in _42_cells:
+        cell.is_visited = True
+
+    maze[start_y][start_x].is_visited = True
+    pool = []
+    
+    for nx, ny in get_neighbors(start_x, start_y):
+        pool.append((nx, ny))
+
+    while pool:
+        idx = random.randrange(len(pool))
+        cx, cy = pool.pop(idx)
+
+        if maze[cy][cx].is_visited:
+            continue
+
+        visited_neighbors = [
+            (vx, vy) for (vx, vy) in get_neighbors(cx, cy)
+            if maze[vy][vx].is_visited and maze[vy][vx] not in _42_cells
+        ]
+
+        
+        bx, by = random.choice(visited_neighbors)
+        print_maze(maze)
+        time.sleep(0.01)
+        break_wall(cx, cy, bx, by)
+
+        maze[cy][cx].is_visited = True
+
+        for nx, ny in get_neighbors(cx, cy):
+            if not maze[ny][nx].is_visited:
+                pool.append((nx, ny))
+
+
 
 
 def get_path(x, y):
@@ -189,6 +226,7 @@ def print_solved(maze, paths):
 
     wall = "\033[93m██\033[0m"
     space = "\033[32m  \033[0m"
+    solution_wall = "\033[92m██"
 
     upper_line = ""
 
@@ -207,24 +245,26 @@ def print_solved(maze, paths):
         bottom_line = ""
 
         # Cell line
+
+        # This part is for corners
         for c in range(len(maze[r])):
             if maze[r][c].walls & 8:
                 cell_line += wall
 
             elif (c, r) in paths and (c - 1, r) in paths:
-                cell_line += "██"
+                cell_line += solution_wall
             else:
                 cell_line += space
 
+        # This part if for inside the cell
             if r == 0 and c == 0:
                 cell_line += "\033[32m██\033[0m"
-
             elif r == height - 1 and c == width - 1:
                 cell_line += "\033[31m██\033[0m"
             elif maze[r][c] in _42cords:
-                cell_line += wall
+                cell_line +=  "\033[90m██\033[0m"
             elif (c, r) in paths:
-                cell_line += "██"
+                cell_line += solution_wall
             else:
                 cell_line += space
 
@@ -241,15 +281,13 @@ def print_solved(maze, paths):
             bottom_line += wall
             if maze[r][c].walls & 4:
                 bottom_line += wall
-
             elif (c, r) in paths and (c, r + 1) in paths:
-                bottom_line += "██"
+                bottom_line += solution_wall
             else:
                 bottom_line += space
         bottom_line += wall
         print(cell_line)
         print(bottom_line)
-
 
 solved = False
 
@@ -260,39 +298,43 @@ def solve(start, visited_paths_local):
     x, y = start
     maze[y][x].is_visited = True
     visited_paths_local += [start]
-    paths = get_path(x, y)
-    random.shuffle(paths)
-    global solved
 
     if start == exit_:
-        global visited_paths_global
-        visited_paths_global = visited_paths_local.copy()
+        global solved
         solved = True
 
+        global visited_paths_global
+        visited_paths_global = visited_paths_local.copy()
+    
     if solved:
+        visited_paths_local.pop()
         return
+    
+    paths = get_path(x, y)
     for path in paths:
-        xx, yy = path
-        if not maze[yy][xx].is_visited:
+        new_x, new_y = path
+        if not maze[new_y][new_x].is_visited:
             if not solved:
-                time.sleep(0.0001)
+                time.sleep(0.01)
                 print_solved(maze, visited_paths_local)
             solve(path, visited_paths_local)
-
     visited_paths_local.pop()
 
-
 try:
-    dfs(width // 2, height // 2)
-
+    prims(0, 0)
+    # dfs(0, 0)
     for cells in maze:
         for cell in cells:
             if cell not in _42cords:
                 cell.is_visited = False
-    solve((0, 0), [])
+
+    local_path = []
+    solve((0, 0), local_path)
     print_solved(maze, visited_paths_global)
-    pass
 except KeyboardInterrupt:
     print("\nThe program was stopped by the user")
+except Exception:
+    print("Error\n")
 finally:
-    print("\033[?25h", end="")
+    # print("\033[?25h", end="")
+    pass
