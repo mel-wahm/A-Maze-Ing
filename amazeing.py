@@ -1,7 +1,10 @@
 #!/usr/bin/python3
+print("\033[2J\033[H", end="")
 import random
 import time
+import sys
 
+sys.setrecursionlimit(10**6)
 SEED = 42
 
 # random.seed(42)
@@ -123,6 +126,8 @@ def print_maze(maze):
         print(bottom_line)
 
 
+
+
 def get_neighbors(x, y):
     neighbors = []
 
@@ -157,7 +162,6 @@ def break_wall(x, y, nx, ny):
         maze[ny][nx].walls -= 2
 
 def dfs(x, y):
-    print("here")
     print("\033[2J\033[H", end="")
     neighbors = get_neighbors(x, y)
     random.shuffle(neighbors)
@@ -166,7 +170,7 @@ def dfs(x, y):
         nx, ny = neighbor
         if not maze[ny][nx].is_visited:
             break_wall(x, y, nx, ny)
-            time.sleep(0.007)
+            time.sleep(0.001)
             print_maze(maze)
             dfs(nx, ny)
 
@@ -196,8 +200,8 @@ def prims(start_x, start_y):
 
         sx, sy = random.choice(visited_neighbors)
         break_wall(cx, cy, sx, sy)
-        print_maze(maze)
-        time.sleep(0.007)
+        # print_maze(maze)
+        # time.sleep(0.001)
 
         maze[cy][cx].is_visited = True
 
@@ -205,16 +209,17 @@ def prims(start_x, start_y):
             if not maze[ny][nx].is_visited:
                 pool.append((nx, ny))
 
-def unperfect(maze):
+def imperfect(maze):
     
     for r in range(len(maze)):
         
         for c in range(len(maze[0])):
             print_maze(maze)
-            time.sleep(0.01)
+            time.sleep(0.001)
             idx = random.randrange(10)
             
-            if idx > 7 and maze[r][c] not in _42cords:
+            if idx > 1 and maze[r][c] not in _42cords\
+                and r % 2 == 0 and c % 2 == 0:
                 if maze[r][c].walls & 1 and r - 1 >= 0\
                     and maze[r - 1][c] not in _42cords:
                     maze[r][c].walls -= 1
@@ -234,6 +239,8 @@ def unperfect(maze):
                     and maze[r + 1][c] not in _42cords:
                     maze[r][c].walls -= 4
                     maze[r + 1][c].walls -= 1
+        print_maze(maze)
+        time.sleep(0.5)
 
 
 def get_path(x, y):
@@ -259,7 +266,7 @@ def print_solved(maze, paths):
 
     wall = "\033[93m██\033[0m"
     space = "\033[32m  \033[0m"
-    solution_wall = "\033[96m██"
+    solution_wall = "██"
 
     upper_line = ""
 
@@ -284,7 +291,7 @@ def print_solved(maze, paths):
             if maze[r][c].walls & 8:
                 cell_line += wall
 
-            elif (c, r) in paths and (c - 1, r) in paths:
+            elif (r, c) in paths and (r, c - 1) in paths:
                 cell_line += solution_wall
             else:
                 cell_line += space
@@ -295,8 +302,8 @@ def print_solved(maze, paths):
             elif r == height - 1 and c == width - 1:
                 cell_line += "\033[31m██\033[0m"
             elif maze[r][c] in _42cords:
-                cell_line +=  "\033[90m██\033[0m"
-            elif (c, r) in paths:
+                cell_line +=  "\033[31m██\033[0m"
+            elif (r, c) in paths:
                 cell_line += solution_wall
             else:
                 cell_line += space
@@ -312,7 +319,7 @@ def print_solved(maze, paths):
             bottom_line += wall
             if maze[r][c].walls & 4:
                 bottom_line += wall
-            elif (c, r) in paths and (c, r + 1) in paths:
+            elif (r, c) in paths and (r + 1, c) in paths:
                 bottom_line += solution_wall
             else:
                 bottom_line += space
@@ -324,8 +331,50 @@ solved = False
 
 visited_paths_global = []
 
+def get_open_neighbors(y, x):
+    open_neighbors = []
+    if not maze[y][x].walls & 1:
+        open_neighbors += [(y - 1, x)]
+    if not maze[y][x].walls & 2:
+        open_neighbors += [(y, x + 1)]
+    if not maze[y][x].walls & 4:
+        open_neighbors += [(y + 1, x)]
+    if not maze[y][x].walls & 8:
+        open_neighbors += [(y, x - 1)]
+    return open_neighbors
+
+
+def bfs(start_y, start_x):
+    global visited_paths_global
+    queue = []
+    paths = {}
+    paths2 = [(start_y, start_x)]
+
+    queue += [(start_y, start_x)]
+    while queue:
+        current_cell = queue.pop(0)
+        
+        neighbors = get_open_neighbors(*current_cell)
+        for neighbor in neighbors:
+            if not neighbor in paths2:
+                queue += [neighbor]
+                paths[neighbor] = current_cell
+                paths2 += [neighbor]
+        print_solved(maze, paths2)
+        time.sleep(0.007)
+        if exit_ in neighbors:
+            break
+    current = exit_
+    while current != (0, 0):
+        visited_paths_global.append(current)
+        current = paths[current]
+    visited_paths_global.append((0, 0))
+
+    visited_paths_global = visited_paths_global[::-1]
+
 
 def solve(start, visited_paths_local):
+    print("\033[2J\033[H", end="")
     x, y = start
     maze[y][x].is_visited = True
     visited_paths_local += [start]
@@ -342,24 +391,21 @@ def solve(start, visited_paths_local):
         return
     
     paths = get_path(x, y)
+    random.shuffle(paths)
     for path in paths:
         new_x, new_y = path
         if not maze[new_y][new_x].is_visited:
             if not solved:
-                time.sleep(0.007)
+                time.sleep(0.001)
                 print_solved(maze, visited_paths_local)
             solve(path, visited_paths_local)
     visited_paths_local.pop()
 
 # try:
 #     prims(0, 0)
-#     for cells in maze:
-#         for cell in cells:
-#             if cell not in _42cords:
-#                 cell.is_visited = False
-#                 cell.walls = 15
+   
 #     time.sleep(1)
-#     dfs(0, 0)
+#     # dfs(0, 0)
 #     for cells in maze:
 #         for cell in cells:
 #             if cell not in _42cords:
@@ -374,6 +420,16 @@ def solve(start, visited_paths_local):
 #     print("Error\n")
 # finally:
 #     pass
-dfs(0, 0)
-unperfect(maze)
+
+
+prims(0, 0)
+for cells in maze:
+        for cell in cells:
+            if cell not in _42cords:
+                cell.is_visited = False
+
+imperfect(maze)
 print_maze(maze)
+# solve((0, 0), [])
+bfs(0, 0)
+print_solved(maze, visited_paths_global)
