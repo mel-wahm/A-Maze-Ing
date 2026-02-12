@@ -66,14 +66,14 @@ def get_forty_two_coords(width, height):
 _42cords = get_forty_two_coords(width, height)
 for cell in _42cords:
     cell.is_visited = True
-exit_ = (height - 1, width - 1)
+exit_ = (height // 2 - 1, width // 2 - 3)
 
 exit_y, exit_x = exit_
 if exit_x > width or exit_y > height:
     print("Exit coordinates are out of the maze's boundes")
     exit()
 
-if exit_ in _42cords:
+if maze[exit_y][exit_x] in _42cords:
     print("The exit cordinates cannot be inside 42 logo")
     exit()
 
@@ -478,3 +478,4 @@ with open("output_file.txt", "w") as f:
     f.write("\n")
     f.write(get_path_string(visited_paths_global))
     f.write("\n")
+    f.write(f"{_42cords}")
