@@ -35,7 +35,6 @@ class Cell:
 maze = [
     [Cell() for _ in range(width)] for _ in range(height)
 ]
-
 def get_forty_two_coords(width, height):
 
     coords = [
@@ -220,6 +219,14 @@ def prims(start_x, start_y):
         print_maze(maze)
         time.sleep(0.001)
 
+def output_maze(maze):
+    output = ""
+    for r in range(len(maze)):
+        for c in range(len(maze[r])):
+            output += hex(maze[r][c].walls)[2:]
+        output += "\n"
+    return output
+
 def imperfect(maze):
     
     for r in range(len(maze)):
@@ -383,6 +390,28 @@ def bfs(start_y, start_x):
 
     visited_paths_global = visited_paths_global[::-1]
 
+def get_path_string(paths):
+    i = 0
+    final_path = ""
+    while i < len(paths) - 1:
+        
+        current_coordinates = paths[i]
+        next_coordinates = paths[i + 1]
+        cy, cx = current_coordinates
+        ny, nx = next_coordinates
+        if cy > ny:
+            final_path += "N"
+        elif ny > cy:
+            final_path += "S"
+        elif cx > nx:
+            final_path += "W"
+        elif nx > cx:
+            final_path += "E"
+        
+        i += 1
+    
+    return final_path
+
 
 def solve(start, visited_paths_local):
     print("\033[2J\033[H", end="")
@@ -444,3 +473,8 @@ print_maze(maze)
 # solve((0, 0), [])
 bfs(0, 0)
 print_solved(maze, visited_paths_global)
+with open("output_file.txt", "w") as f:
+    f.write(output_maze(maze))
+    f.write("\n")
+    f.write(get_path_string(visited_paths_global))
+    f.write("\n")
