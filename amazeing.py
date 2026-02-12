@@ -67,7 +67,16 @@ def get_forty_two_coords(width, height):
 _42cords = get_forty_two_coords(width, height)
 for cell in _42cords:
     cell.is_visited = True
+exit_ = (height - 1, width - 1)
 
+exit_y, exit_x = exit_
+if exit_x > width or exit_y > height:
+    print("Exit coordinates are out of the maze's boundes")
+    exit()
+
+if exit_ in _42cords:
+    print("The exit cordinates cannot be inside 42 logo")
+    exit()
 
 def print_maze(maze):
     print("\033[H")
@@ -100,7 +109,7 @@ def print_maze(maze):
             if r == 0 and c == 0:
                 cell_line += "\033[32m██\033[0m"
 
-            elif r == height - 1 and c == width - 1:
+            elif (r, c) == exit_:
                 cell_line += "\033[31m██\033[0m"
             elif maze[r][c] in _42cords:
                 cell_line += "\033[31m██\033[0m"
@@ -208,6 +217,8 @@ def prims(start_x, start_y):
         for nx, ny in get_neighbors(cx, cy):
             if not maze[ny][nx].is_visited:
                 pool.append((nx, ny))
+        print_maze(maze)
+        time.sleep(0.001)
 
 def imperfect(maze):
     
@@ -240,7 +251,7 @@ def imperfect(maze):
                     maze[r][c].walls -= 4
                     maze[r + 1][c].walls -= 1
         print_maze(maze)
-        time.sleep(0.5)
+        time.sleep(0.05)
 
 
 def get_path(x, y):
@@ -258,7 +269,7 @@ def get_path(x, y):
     return paths
 
 
-exit_ = (width - 1, height - 1)
+
 
 
 def print_solved(maze, paths):
@@ -299,7 +310,7 @@ def print_solved(maze, paths):
         # This part if for inside the cell
             if r == 0 and c == 0:
                 cell_line += "\033[32m██\033[0m"
-            elif r == height - 1 and c == width - 1:
+            elif (r, c) == exit_:
                 cell_line += "\033[31m██\033[0m"
             elif maze[r][c] in _42cords:
                 cell_line +=  "\033[31m██\033[0m"
@@ -348,7 +359,7 @@ def bfs(start_y, start_x):
     global visited_paths_global
     queue = []
     paths = {}
-    paths2 = [(start_y, start_x)]
+    final_path = [(start_y, start_x)]
 
     queue += [(start_y, start_x)]
     while queue:
@@ -356,11 +367,11 @@ def bfs(start_y, start_x):
         
         neighbors = get_open_neighbors(*current_cell)
         for neighbor in neighbors:
-            if not neighbor in paths2:
+            if not neighbor in final_path:
                 queue += [neighbor]
                 paths[neighbor] = current_cell
-                paths2 += [neighbor]
-        print_solved(maze, paths2)
+                final_path += [neighbor]
+        print_solved(maze, final_path)
         time.sleep(0.007)
         if exit_ in neighbors:
             break
