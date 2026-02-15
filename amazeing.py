@@ -1,9 +1,11 @@
 #!/usr/bin/python3
-print("\033[2J\033[H", end="")
 import random
 import time
 import sys
+import os
 
+print("\033[1;1H", end="")
+os.system('clear')
 sys.setrecursionlimit(10**6)
 SEED = 42
 
@@ -22,8 +24,10 @@ except Exception:
     print("Only numbers are allowed.")
     exit()
 
-
-print("\033[H\033[J", end="")
+exit_ = (height - 1, width - 1)
+entry_y = 0
+entry_x = 0
+entry_ = (entry_y, entry_x)
 
 
 class Cell:
@@ -66,19 +70,28 @@ def get_forty_two_coords(width, height):
 _42cords = get_forty_two_coords(width, height)
 for cell in _42cords:
     cell.is_visited = True
-exit_ = (height // 2 - 1, width // 2 - 3)
 
 exit_y, exit_x = exit_
 if exit_x > width or exit_y > height:
     print("Exit coordinates are out of the maze's boundes")
     exit()
 
+
+if (entry_y, entry_x) == (exit_y, exit_x):
+    print("Entry and exit coordinates cannot be the same")
+    exit()
+
+
 if maze[exit_y][exit_x] in _42cords:
     print("The exit cordinates cannot be inside 42 logo")
     exit()
 
+if maze[entry_y][entry_x] in _42cords:
+    print("The exit cordinates cannot be inside 42 logo")
+    exit()
+
 def print_maze(maze):
-    print("\033[H")
+    print("\033[1;1H", end="")
     wall = "\033[93m██\033[0m"
     space = "\033[32m  \033[0m"
 
@@ -105,7 +118,7 @@ def print_maze(maze):
             else:
                 cell_line += space
 
-            if r == 0 and c == 0:
+            if (r, c) == entry_:
                 cell_line += "\033[32m██\033[0m"
 
             elif (r, c) == exit_:
@@ -170,15 +183,15 @@ def break_wall(x, y, nx, ny):
         maze[ny][nx].walls -= 2
 
 def dfs(x, y):
-    print("\033[2J\033[H", end="")
     neighbors = get_neighbors(x, y)
     random.shuffle(neighbors)
     maze[y][x].is_visited = True
     for neighbor in neighbors:
         nx, ny = neighbor
         if not maze[ny][nx].is_visited:
+            # print("\033[2J\033[H", end="")
             break_wall(x, y, nx, ny)
-            time.sleep(0.001)
+            time.sleep(0.01)
             print_maze(maze)
             dfs(nx, ny)
 
@@ -258,7 +271,7 @@ def imperfect(maze):
                     maze[r][c].walls -= 4
                     maze[r + 1][c].walls -= 1
         print_maze(maze)
-        time.sleep(0.05)
+        time.sleep(0.00005)
 
 
 def get_path(x, y):
@@ -274,9 +287,6 @@ def get_path(x, y):
     if not wall & 8:
         paths += [(x - 1, y)]
     return paths
-
-
-
 
 
 def print_solved(maze, paths):
@@ -315,7 +325,7 @@ def print_solved(maze, paths):
                 cell_line += space
 
         # This part if for inside the cell
-            if r == 0 and c == 0:
+            if (r, c) == entry_:
                 cell_line += "\033[32m██\033[0m"
             elif (r, c) == exit_:
                 cell_line += "\033[31m██\033[0m"
@@ -362,31 +372,35 @@ def get_open_neighbors(y, x):
     return open_neighbors
 
 
+from collections import deque
+
+
 def bfs(start_y, start_x):
     global visited_paths_global
-    queue = []
+    queue = deque()
     paths = {}
-    final_path = [(start_y, start_x)]
-
+    final_path = set()
+    final_path.add((start_y, start_x))
+    
     queue += [(start_y, start_x)]
     while queue:
-        current_cell = queue.pop(0)
+        current_cell = queue.popleft()
         
         neighbors = get_open_neighbors(*current_cell)
         for neighbor in neighbors:
             if not neighbor in final_path:
-                queue += [neighbor]
+                queue.append(neighbor)
                 paths[neighbor] = current_cell
-                final_path += [neighbor]
+                final_path.add(neighbor)
         print_solved(maze, final_path)
-        time.sleep(0.007)
+        time.sleep(0.000000001)
         if exit_ in neighbors:
             break
     current = exit_
-    while current != (0, 0):
+    while current != (entry_y, entry_x):
         visited_paths_global.append(current)
         current = paths[current]
-    visited_paths_global.append((0, 0))
+    visited_paths_global.append((start_y, start_x))
 
     visited_paths_global = visited_paths_global[::-1]
 
@@ -413,69 +427,32 @@ def get_path_string(paths):
     return final_path
 
 
-def solve(start, visited_paths_local):
-    print("\033[2J\033[H", end="")
-    x, y = start
-    maze[y][x].is_visited = True
-    visited_paths_local += [start]
+def animate_solved(maze, final_path):
+    os.system("clear")
+    current_path = []
+    for path in final_path:
+        print("\033[1;1H", end="")
+        print_solved(maze, current_path)
+        time.sleep(0.00003)
+        current_path.append(path)
 
-    if start == exit_:
-        global solved
-        solved = True
-
-        global visited_paths_global
-        visited_paths_global = visited_paths_local.copy()
-    
-    if solved:
-        visited_paths_local.pop()
-        return
-    
-    paths = get_path(x, y)
-    random.shuffle(paths)
-    for path in paths:
-        new_x, new_y = path
-        if not maze[new_y][new_x].is_visited:
-            if not solved:
-                time.sleep(0.001)
-                print_solved(maze, visited_paths_local)
-            solve(path, visited_paths_local)
-    visited_paths_local.pop()
-
-# try:
-#     prims(0, 0)
-   
-#     time.sleep(1)
-#     # dfs(0, 0)
-#     for cells in maze:
-#         for cell in cells:
-#             if cell not in _42cords:
-#                 cell.is_visited = False
-
-#     local_path = []
-#     solve((0, 0), local_path)
-#     print_solved(maze, visited_paths_global)
-# except KeyboardInterrupt:
-#     print("\nThe program was stopped by the user")
-# except Exception:
-#     print("Error\n")
-# finally:
-#     pass
-
-
+dfs(0, 0)
 prims(0, 0)
 for cells in maze:
         for cell in cells:
             if cell not in _42cords:
                 cell.is_visited = False
 
-imperfect(maze)
+# imperfect(maze)
 print_maze(maze)
-# solve((0, 0), [])
-bfs(0, 0)
+entry_y, entry_x = entry_
+bfs(entry_y, entry_x)
+animate_solved(maze, visited_paths_global)
 print_solved(maze, visited_paths_global)
 with open("output_file.txt", "w") as f:
     f.write(output_maze(maze))
     f.write("\n")
     f.write(get_path_string(visited_paths_global))
     f.write("\n")
-    f.write(f"{_42cords}")
+    f.write(f"{entry_x},{entry_y}\n")
+    f.write(f"{exit_x},{exit_y}\n")
