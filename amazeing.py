@@ -6,10 +6,10 @@ import os
 
 print("\033[1;1H", end="")
 os.system('clear')
-sys.setrecursionlimit(10**6)
+sys.setrecursionlimit(2147483647)
 SEED = 42
 
-# random.seed(42)
+random.seed(42)
 
 try:
     width = int(input("Enter Width of the Maze: "))
@@ -25,7 +25,9 @@ except Exception:
     exit()
 
 exit_ = (height - 1, width - 1)
+# entry_y = random.randrange(height - 1)
 entry_y = 0
+# entry_x = random.randrange(width - 1)
 entry_x = 0
 entry_ = (entry_y, entry_x)
 
@@ -91,7 +93,6 @@ if maze[entry_y][entry_x] in _42cords:
     exit()
 
 def print_maze(maze):
-    print("\033[1;1H", end="")
     wall = "\033[93m██\033[0m"
     space = "\033[32m  \033[0m"
 
@@ -189,15 +190,15 @@ def dfs(x, y):
     for neighbor in neighbors:
         nx, ny = neighbor
         if not maze[ny][nx].is_visited:
-            # print("\033[2J\033[H", end="")
+            # os.system("clear")
             break_wall(x, y, nx, ny)
-            time.sleep(0.01)
+            time.sleep(0.000000000001)
             print_maze(maze)
             dfs(nx, ny)
 
 
 def prims(start_x, start_y):
-    print("\033[2J\033[H", end="")
+    os.system("clear")
     _42_cells = get_forty_two_coords(width, height)
 
     maze[start_y][start_x].is_visited = True
@@ -229,8 +230,9 @@ def prims(start_x, start_y):
         for nx, ny in get_neighbors(cx, cy):
             if not maze[ny][nx].is_visited:
                 pool.append((nx, ny))
+        os.system("clear")
         print_maze(maze)
-        time.sleep(0.001)
+        time.sleep(0.000001)
 
 def output_maze(maze):
     output = ""
@@ -270,6 +272,7 @@ def imperfect(maze):
                     and maze[r + 1][c] not in _42cords:
                     maze[r][c].walls -= 4
                     maze[r + 1][c].walls -= 1
+        os.system("clear")
         print_maze(maze)
         time.sleep(0.00005)
 
@@ -393,11 +396,11 @@ def bfs(start_y, start_x):
                 paths[neighbor] = current_cell
                 final_path.add(neighbor)
         print_solved(maze, final_path)
-        time.sleep(0.000000001)
+        time.sleep(0.001)
         if exit_ in neighbors:
             break
     current = exit_
-    while current != (entry_y, entry_x):
+    while current != (start_y, start_x):
         visited_paths_global.append(current)
         current = paths[current]
     visited_paths_global.append((start_y, start_x))
@@ -431,9 +434,9 @@ def animate_solved(maze, final_path):
     os.system("clear")
     current_path = []
     for path in final_path:
-        print("\033[1;1H", end="")
+        os.system("clear")
         print_solved(maze, current_path)
-        time.sleep(0.00003)
+        time.sleep(0.01)
         current_path.append(path)
 
 dfs(0, 0)
@@ -443,7 +446,8 @@ for cells in maze:
             if cell not in _42cords:
                 cell.is_visited = False
 
-# imperfect(maze)
+
+imperfect(maze)
 print_maze(maze)
 entry_y, entry_x = entry_
 bfs(entry_y, entry_x)
@@ -456,3 +460,4 @@ with open("output_file.txt", "w") as f:
     f.write("\n")
     f.write(f"{entry_x},{entry_y}\n")
     f.write(f"{exit_x},{exit_y}\n")
+
